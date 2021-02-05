@@ -1,0 +1,1 @@
+boolean compile(char *); /* for contacting main() */
