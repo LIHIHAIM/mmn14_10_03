@@ -16,8 +16,6 @@ boolean executeCom(char *);
 char* dirCommands[DIR_COMS] =  {".data", ".string", ".entry", ".extern"}; /* the directive commands */
 enum cmds {data, string, entry, external};
 
-
-
 /* compile(): The function compiles an Assembly file and make one to three files in addition:
  file.ob - a binary file, which includes the memory....
  file.ent - an "entry" file, which includes the names of all the variable which other files can see and
@@ -170,18 +168,18 @@ boolean getOptLabel(char *label/*, int *ind*/){
      char curr;
      boolean firstColon = FALSE;
 
-     lineInd = jumpSpaces(line,lineInd);
-     temp = lineInd;    
-     while(!isspace(curr = line[lineInd]) && curr != '\0'){
-          if(lineInd-temp > LABEL_SIZE && firstColon == FALSE){
+     lInd = jumpSpaces(line,lInd);
+     temp = lInd;    
+     while(!isspace(curr = line[lInd]) && curr != '\0'){
+          if(lInd-temp > LABEL_SIZE && firstColon == FALSE){
                fprintf(stderr,"error : label is too long, maximum label length is %d\n",LABEL_SIZE);
                return FALSE;
           }
-          if(temp == lineInd && !isalpha(curr)){ /* label does not start with a letter */
+          if(temp == lInd && !isalpha(curr)){ /* label does not start with a letter */
                fprintf(stderr,"error : label must start with an alphabetic character\n");
                return FALSE;
           }
-          if(curr != ':' && firstColon == TRUE && line[lineInd+1] != '\0' && !isspace(line[lineInd+1])){
+          if(curr != ':' && firstColon == TRUE && line[lInd+1] != '\0' && !isspace(line[lInd+1])){
                fprintf(stderr, "error : after label must be at list one space\n");
                return FALSE;
           }
@@ -196,11 +194,11 @@ boolean getOptLabel(char *label/*, int *ind*/){
           if(curr == ':')
                firstColon = TRUE;
           else 
-               label[lineInd-temp] = curr;
-          lineInd++;
+               label[lInd-temp] = curr;
+          lInd++;
      }
-     label[lineInd-temp] = '\0';
-     if(temp == lineInd)
+     label[lInd-temp] = '\0';
+     if(temp == lInd)
           label = NULL;
      /**ind = i;*/
      return TRUE;
@@ -211,13 +209,13 @@ int getDirCom(char *command/*, int *ind*/){
      int i;
      char curr;
 
-     lineInd = jumpSpaces(line,lineInd);
-     temp = lineInd;
-     while((curr = line[lineInd]) != '\0' && !isspace(curr)){ /* reading the command */
-          command[lineInd-temp] = curr;
-          lineInd++;
+     lInd = jumpSpaces(line,lInd);
+     temp = lInd;
+     while((curr = line[lInd]) != '\0' && !isspace(curr)){ /* reading the command */
+          command[lInd-temp] = curr;
+          lInd++;
      }
-     command[lineInd-temp] = '\0';
+     command[lInd-temp] = '\0';
      /**ind = lineInd;*/
      
      for(i = 0; i < DIR_COMS; i++){
