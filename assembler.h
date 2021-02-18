@@ -32,5 +32,6 @@ typedef struct{
 
 reg regs[REGISTERS];
 char line[LINE];
+
 boolean compSuc;
-int IC, DC, lineInd;
+int IC, DC, lInd;

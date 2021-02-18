@@ -16,7 +16,7 @@ boolean executeCom(char *);
 char* dirCommands[DIR_COMS] =  {".data", ".string", ".entry", ".extern"}; /* the directive commands */
 enum cmds {data, string, entry, external};
 
-IC = 100, DC = 0, lineInd = 0, IS_LABLE=0, NEXT_WORD=0, ERROR=0;
+
 
 /* compile(): The function compiles an Assembly file and make one to three files in addition:
  file.ob - a binary file, which includes the memory....
@@ -25,91 +25,13 @@ IC = 100, DC = 0, lineInd = 0, IS_LABLE=0, NEXT_WORD=0, ERROR=0;
  file.ext - an "extern" file, which includes the names of all the external variables (from other files) 
             and their calling address in the RAM.
 */
-boolean second_compile(char *fileName){
+boolean compile(char *fileName){
      FILE *fd = openf(fileName,"r");
      char *tempLine;
      senType type;
      boolean symbol = FALSE;
 
-     compSuc = TRUE;
-
-     if(!fd)
-          return FALSE;
-     while(FOREVER){ 
-          char *optLabel = calloc(LABEL_SIZE,sizeof(char));
-          if(!isAlloc(optLabel))
-               return FALSE;
-          tempLine = readLine(fd,LINE);
-          if(*tempLine == '\0')
-              break;
-          strcpy(line,tempLine);
-          free(tempLine);
-
-          if(getOptLabel(optLabel)){
-               compSuc = TRUE;
-               continue;
-          }
-          else
-          {
-               IS_LABLE=TRUE;
-          }
-          switch(type){
-               case blank:
-               case comment:
-               break;
-               case directive:
-                    int command = getDirCom(command);
-                    switch(command){
-                         case data:
-                         case string:
-                              char **params;
-                              if(symbol == TRUE){
-                                   if(/* search(optLabel) */){
-                                        /* some error */
-                                        compSuc = FALSE;
-                                        continue;
-                                   }
-                                   /*push(".data", DC, optLabel)*/
-                                   DC++;
-                              }
-                              params = getParams();
-                              pushParams(params, DC);
-                              continue;
-                         case external:
-                              continue;
-                         case entry:
-                              /*push(".data", DC, optLabel)*/ 
-                                   DC++;
-                                   if(/* search(optLabel) */){
-                                        compSuc = FALSE;
-                                        continue;
-                                   }
-                                   else
-                                   {
-                                        /* some error */
-                                        continue;
-                                   }
-                         case default:
-                              /*push(".data", DC, optLabel)*/ 
-                              if(/* search(optLabel) */){
-                                        /* some error */
-                                        compSuc = FALSE;
-                                        continue;
-                                   }
-                              continue;
-                    }
-               break;
-           
-     }
-
-}
- 
- boolean compile(char *fileName){
-     FILE *fd = openf(fileName,"r");
-     char *tempLine;
-     senType type;
-     boolean symbol = FALSE;
-
+     IC = 100, DC = 0, lInd = 0;
      compSuc = TRUE;
 
      if(!fd)
@@ -194,10 +116,9 @@ boolean second_compile(char *fileName){
           }
      }
 
-     /*Can we delete this loop? */
+     /* */
      while(FOREVER){}
 }
-
      /*while(FOREVER){
           tempLine = readLine(fd,LINE);
           if(*tempLine == '\0')
@@ -319,9 +240,9 @@ static char **getParms(char *line){
      if(!isAlloc(params))
           return NULL;
      params[0][0] = '1'; /* not null value */
-     *ind = jumpSpaces(line, *ind);
+     lInd = jumpSpaces(line, lInd);
 
-     while((curr = line[*ind]) != '\n'){
+     while((curr = line[lInd]) != '\n'){
           switch(state){
                case IN:
                     if(curr == '\n'){
@@ -337,11 +258,11 @@ static char **getParms(char *line){
                case HASH:
                     if(curr == '#')
                          break;
-                    if(isspace(curr) && line[*ind-1] != '#'){
+                    if(isspace(curr) && line[lInd-1] != '#'){
                          state = COMMA;
                          break;
                     }
-                    if(line[*ind-1] != '#'){
+                    if(line[lInd-1] != '#'){
                          fprintf(stderr, "error : no numerical number inserted after '#' label\n");
                          return NULL;
                     }
@@ -349,7 +270,7 @@ static char **getParms(char *line){
                          fprintf(stderr, "error : decimal number must include only numerical digits\n");
                          return NULL;
                     }
-                    if(line[*ind-1] != '#' && (curr == '+' || curr == '-')){
+                    if(line[lInd-1] != '#' && (curr == '+' || curr == '-')){
                          fprintf(stderr, "error : negative or positive sign must be in the start of the number\n");
                          return NULL;
                     }
@@ -361,7 +282,7 @@ static char **getParms(char *line){
                     break;
                break;
                case COMMA:
-                    if(!jumpSpaceComma(line,ind))
+                    if(!jumpSpaceComma(line))
                          return NULL;
                     sizeI++;
                     state = IN;
@@ -371,21 +292,21 @@ static char **getParms(char *line){
                case OUT:
                     return params;
           }
-          (*ind)++;
+          lInd++;
      }
 }
 
 boolean jumpSpaceComma(char *line){
      int firstComma = 0;
      char curr;
-     while((curr = line[*ind]) != '\0' && (isspace(curr) || curr == ',')){
+     while((curr = line[lInd]) != '\0' && (isspace(curr) || curr == ',')){
           if(curr == ',')
                firstComma++;
           if(firstComma > 1){
                fprintf(stderr, "error : between parameters must seperate one comma only\n");
                return FALSE;
           }
-          (*ind)++;
+          lInd++;
      }
      if(firstComma == 0){
           fprintf(stderr, "error : between parameters must seperate one comma\n");

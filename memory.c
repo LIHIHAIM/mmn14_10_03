@@ -6,4 +6,9 @@ int isAlloc(void *p){
         return 0;
     }
     return 1;
-} 
+}
+
+symbol *newSymTable(char *name, int val, char *attrib){
+    symbol *symTab = malloc(sizeof(symbol));
+    return symTab;
+}
