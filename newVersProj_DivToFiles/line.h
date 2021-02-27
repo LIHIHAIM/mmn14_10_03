@@ -5,5 +5,5 @@ enum cmds {data, string, entry, external};
 
 boolean getOptLabel(char *, char *, int *);
 int getDirCom(char *, char *, int *);
-char **getParms(char *);
+char **getParams(char *);
 int jumpSpaces(char *, int);

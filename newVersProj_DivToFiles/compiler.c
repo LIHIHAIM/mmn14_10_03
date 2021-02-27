@@ -9,6 +9,16 @@
 #define FOREVER 1
 #define LINE 81
 
+typedef struct{
+     enum dataType{intOrChar, reg, label};
+     enum dataType type;
+     union{
+          word iOrCh; /* an integer or a character */ 
+          word reg; /* register */
+          word l; /* label */
+     } param;
+} paramType;
+
 /* compile(): The function compiles an Assembly file and make one to three files in addition:
  file.ob - a binary file, which includes the memory....
  file.ent - an "entry" file, which includes the names of all the variable which other files can see and
@@ -18,62 +28,66 @@
 */
 boolean compile(char *fileName){
      FILE *fd = openf(fileName,"r");
-     char *tempLine;
+     char line[LINE]; /* array for handling a line of assembly code */
+     int *lInd = calloc(1,sizoef(int)); /* the Line-Index */
+     char *tempLine, *optLabel;
+     
      statType type;
-     boolean thereIsLable = FALSE;
+     boolean labelExist = FALSE;
      boolean compSuc = TRUE;
 
      int symTabSize = 1;
      symbolTable *symTab = calloc(symTabSize,sizeof(symbolTable));
 
-     if(!isAlloc(symTab))
+     if(!isAlloc(symTab) || !isAlloc(lInd))
           return FALSE;
      
      if(!fd)
           return FALSE;
      while(FOREVER){
-          char line[LINE]; /* array for handling a line of assembly code */
-          int *lInd = calloc(1,sizoef(int)); /* the Line-Index */
-          char *optLabel = calloc(LABEL_SIZE,sizeof(char));
-          if(!isAlloc(optLabel) || !isAlloc(lInd))
-               return FALSE;
-          tempLine = readLine(fd,LINE);
-          if(*tempLine == '\0')
+          resetCounters(); /* setting IC to 100 and DC to 0 */
+          tempLine = readLine(fd,LINE); /* reading a line from the file */
+          if(*tempLine == '\0') /* end of file */
               break;
           strcpy(line,tempLine);
           free(tempLine);
 
+          optLabel = calloc(LABEL_SIZE,sizeof(char));
+          if(!isAlloc(optLabel))
+               return FALSE;
           if(!getOptLabel(optLabel)){ /* could not get a lable */
                compSuc = FALSE;
                continue;
           }
           if(optLabel) /* there is a lable */
-               thereIsLable = TRUE;
-          type = getStatType(line);
+               labelExist = TRUE;
+          type = getStatType(line); /* finding the statment type (instruction/ directive/ balnk line/ comment) */
 
           switch(type){
-               case blank:
+               case blank: /* if the statment is a blank line or a comment then skip to the next line */
                case comment:
-               break;
+               continue;
                case directive:
                     int command = getDirCom(command);
                     switch(command){
                          case data:
                          case string:
                               char **params;
-                              if(thereIsLable == TRUE){
-                                   if(wasDefined(symTab, optLabel, symTabSize)){ /* if label was all ready defined */
-                                        printf("error: label is already defined in this program");
+                              if(labelExist){
+                                   if(isIlegalName(optLabel, symTab, symTabSize))  /* if label was all ready defined */
                                         compSuc = FALSE;
-                                        continue;
+                                   else if(command == data){
+                                        if(!addToSymTab(symTab, optLabel, ".data", symTabSize))
+                                             return FALSE;
                                    }
-                                   if(!addToSymTab(symTab, optLabel, DC, ".data",symTabSize))
-                                        return FALSE;
+                                   else if(command == string){
+                                        if(!addToSymTab(symTab, optLabel, ".string", symTabSize))
+                                             return FALSE;
+                                   }
                                    symTabSize++;
-                                   /*DC++;*/
                               }
                               params = getParams();
-                              pushParams(params/*, DC*/);
+                              pushParams(params);
                               continue;
                          case external:
                               if(/* search(optLabel) */1){
@@ -118,7 +132,16 @@ boolean compile(char *fileName){
      /* */
      while(FOREVER){}
 }
-     /*while(FOREVER){
+
+int main(){
+     if(compile("test.txt") == TRUE)
+          printf("compiled sucssesfuly\n");
+     else
+          printf("could not compile\n");    
+     return 0;
+}
+
+/*while(FOREVER){
           tempLine = readLine(fd,LINE);
           if(*tempLine == '\0')
                return compSuc;
@@ -162,10 +185,4 @@ boolean compile(char *fileName){
                break;
           }
      }*/
-int main(){
-     if(compile("test.txt") == TRUE)
-          printf("compiled sucssesfuly\n");
-     else
-          printf("could not compile\n");    
-     return 0;
-}
+

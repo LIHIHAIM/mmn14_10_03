@@ -13,4 +13,8 @@ typedef struct{
 boolean isAlloc(void *);
 boolean addToSymTab(symbolTable *, char *, int, char *, int);
 boolean wasDefined(symbolTable *, char *, int);
-boolean isNameRegister(char *);
+boolean isIlegalName(char *, symbolTable*, int);
+void delTabAndCnts(symbolTable *);
+
+
+
