@@ -1,0 +1,80 @@
+
+				~~ This is a matrix calculator ~~
+	Instractions: 
+	1. Insert an operation name on matrices from the list below:
+	[ read_mat, print_mat, add_mat, sub_mat, mul_mat, mul_scalar, trans_mat, stop ]
+
+	2. Eneter the matrix/ces name/s on which the function will operate:
+	[ MAT_A, MAT_B, MAT_C, MAT_D, MAT_E, MAT_F ]
+
+	* The parameters for every function shall be separated by commas.
+	* Every command line will be 250 characters long and shall be writen in one line.
+
+
+>>> 
+ [Command is:] read_mat MAT_A,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+
+>>> 
+ [Command is:] print_mat MAT_A
+your mat:
+1.00	1.00	1.00	1.00	
+1.00	1.00	1.00	1.00	
+1.00	1.00	1.00	1.00	
+1.00	1.00	1.00	1.00	
+
+>>> 
+ [Command is:] print_ma   MAT_A ,,
+ Undefined command name
+
+>>> 
+ [Command is:] print_mat MAT_T
+ Undefined matrix name
+
+>>> 
+ [Command is:] print_mat , MAT_G
+Ilegal comma
+
+>>> 
+ [Command is:] read_mat MAT_A,,1,2
+ Multiple consecutive commas
+
+>>> 
+ [Command is:] mul_scalar MAT_A,-2.2.,MAT_B
+ Argument is not a scalar
+
+>>> 
+ [Command is:] mul_scalar MAT_A,--2,MAT_B
+ Argument is not a scalar
+
+>>> 
+ [Command is:] mul_mat MAT_A MAT_A, MAT_A
+ Missing comma
+
+>>> 
+ [Command is:] mul_mat MAT_A ,, MAT_B
+ Multiple consecutive commas
+
+>>> 
+ [Command is:] mul_mat MAT_A, MAT_A, 
+ missing argument
+
+>>> 
+ [Command is:] mul_scalar MAT_A,abc,MAT_A
+ Argument is not a scalar
+
+>>> 
+ [Command is:] stop now
+ Extraneous text after end of command
+
+>>> 
+ [Command is:] read_mat MAT_A,1,23.3.,2
+ Argument is not a real number
+
+>>> 
+ [Command is:] mul_scalar MAT_A,MAT_B,MAT_C, MAT_D
+ Argument is not a scalar
+
+>>> 
+>>> 
+ EOF (ctrl + d) command is not allowed:
+ If you wish to terminate the program use the command 'stop'
