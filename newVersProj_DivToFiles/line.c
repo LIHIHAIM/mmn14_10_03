@@ -7,12 +7,12 @@
 #define MAX_DIR_COM_LEN 8 /* maximum length of a directive command */ 
 #define DIR_COMS 4 /* the directive commands */
 
-char *dirCommands[DIR_COMS] =  {".data", ".string", ".entry", ".extern"}; /* the directive commands */
+static char *dirCommands[DIR_COMS] =  {".data", ".string", ".entry", ".extern"}; /* the directive commands */
 
-static boolean jumpSpaceComma(char *);
+boolean jumpSpaceComma(char *);
 
-/* get the optional label before the sentence */
-boolean getOptLabel(char *label, char *line, int *lInd){
+/* get the optional label before the    sentence */
+/*boolean getOptLabel(char *label, char *line, int *lInd){
      int temp, i;
      char curr;
      boolean firstColon = FALSE;
@@ -24,7 +24,15 @@ boolean getOptLabel(char *label, char *line, int *lInd){
                printf("error : label is too long, maximum label length is %d\n",LABEL_SIZE);
                return FALSE;
           }
-          if(temp == *lInd && !isalpha(curr)){ /* label does not start with a letter */
+          if(*lInd == temp && !isalpha(curr)){ /* label does not start with a letter 
+               printf("error : label must start with an alphabetic character\n");
+               return FALSE;
+          }
+          if(!isalnum(curr) && curr != ':'){ /* label include a not alphabetical or numberical characters or a colon 
+               printf("error : label must include only alphbetical and numerical characters\n");
+               return FALSE;
+          }
+          /*if(temp == *lInd && !isalpha(curr)){ /* label does not start with a letter 
                printf("error : label must start with an alphabetic character\n");
                return FALSE;
           }
@@ -32,9 +40,56 @@ boolean getOptLabel(char *label, char *line, int *lInd){
                printf("error : after label must be at list one space\n");
                return FALSE;
           }
-          if(!isalnum(curr) && curr != ':'){ /* label include a not alphabetical or numberical characters or a colon */ 
+          if(!isalnum(curr) && curr != ':'){ /* label include a not alphabetical or numberical characters or a colon  
                printf("error : label must include only alphbetical and numerical characters\n");
                return FALSE;
+          }*/
+          /*if(curr == ':' && firstColon == TRUE){
+               fprintf(stderr,"error: to many colons in label name, label must be in the form \" label: \"\n");
+               return FALSE;
+          }
+          if(curr == ':' && line[*lInd+1] != '\0' && !isspace(line[*lInd+1])){
+               printf("error : after label must be at list one space\n");
+               return FALSE;
+          }
+          if(curr == ':')
+               firstColon = TRUE;
+          else
+               label[*lInd-temp] = curr;
+          (*lInd)++;
+     }
+     
+     label[*lInd-temp] = '\0';
+     if(temp == *lInd)
+          label = NULL;
+     return TRUE;
+}*/
+
+/* get the optional label before the sentence */
+boolean getOptLabel(char *label, char *line, int *lInd){
+     int temp, i;
+     char curr;
+     boolean firstColon = FALSE;
+     boolean valid = TRUE;
+
+     *lInd = jumpSpaces(line,*lInd);
+     temp = *lInd;
+     while(!isspace(curr = line[lInd]) && curr != '\0'){
+          if(*lInd-temp > LABEL_SIZE && firstColon == FALSE){
+               printf("error : label is too long, maximum label length is %d\n",LABEL_SIZE);
+               valid = FALSE;
+          }
+          else if(temp == *lInd && !isalpha(curr)){ /* label does not start with a letter */
+               printf("error : label must start with an alphabetic character\n");
+               valid = FALSE;
+          }
+          else if(curr != ':' && firstColon == TRUE && line[*lInd+1] != '\0' && !isspace(line[*lInd+1])){
+               printf("error : after label must be at list one space\n");
+               valid = FALSE;
+          }
+          else if(!isalnum(curr) && curr != ':'){ /* label include a not alphabetical or numberical characters or a colon */ 
+               printf("error : label must include only alphbetical and numerical characters\n");
+               valid = FALSE;
           }
           /*if(curr == ':' && firstColon == TRUE){
                fprintf(stderr,"error: to many colons in label name, label must be in the form \" label: \"\n");
@@ -50,7 +105,7 @@ boolean getOptLabel(char *label, char *line, int *lInd){
      label[*lInd-temp] = '\0';
      if(temp == *lInd)
           label = NULL;
-     return TRUE;
+     return valid;
 }
 
 int getDirCom(char *command, char *line, int *lInd){
@@ -141,7 +196,7 @@ char **getParms(char *line){
      }
 }
 
-static boolean jumpSpaceComma(char *line){
+boolean isThereComma(char *line, int *lInd){
      int firstComma = 0;
      char curr;
      while((curr = line[lInd]) != '\0' && (isspace(curr) || curr == ',')){
@@ -151,7 +206,7 @@ static boolean jumpSpaceComma(char *line){
                printf("error : between parameters must seperate one comma only\n");
                return FALSE;
           }
-          lInd++;
+          (*lInd)++;
      }
      if(firstComma == 0){
           printf("error : between parameters must seperate one comma\n");

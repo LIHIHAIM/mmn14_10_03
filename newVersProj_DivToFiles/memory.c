@@ -1,49 +1,104 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include "memory.h"
+#include "label.h"
 
-#define REGISTERS 8
 #define OS_MEM 100
 #define RAM_SIZE 4096
-#define COMMANDS 4
 #define FUNCT_SIZE 4
 #define DEST_SIZE 2
 #define SOURCE_SIZE 2
-
-
+#define LABEL_SIZE 31
+#define REGISTERS 8
+#define COMMANDS 4
+#define INSTRUCTIONS 16
 
 #define MAKE_STRING(str) #str /* making a string */
 #define REGISTER_NAME(reg) MAKE_STRING(r##reg) /* making a register name (string starts with 'r' and then a number) */
 
-word registers[REGISTERS+1]; /* general registers (8) + the PSW register */
-int IC, DC; /* Instructions-Counter, Data-Counter (index) */
-word *instImage, *dataImage;
-word *RAM;
+static word registers[REGISTERS+1]; /* general registers (8) + the PSW register */
+static int IC, DC; /* Instructions-Counter, Data-Counter (index) */
+static word *instImage, *dataImage;
+static symbolTable *symTab;
+static int symSize;
 
-boolean isAlloc(void *p){
-    if(!p){
-        printf("error : memory allocation failed\n");
-        return FALSE;
+boolean pushData(char *line, int *lInd){
+    int size = 1, i = 0, j;
+    word *params = calloc(size, sizeof(word));
+    boolean error = FALSE;
+
+    if(!isAlloc(params))
+        return ERROR;
+
+    while(line[*lInd] != '\0'){
+        word *scaned;
+        params = realloc(params, (++size) * sizeof(paramType));
+
+        if(!isAlloc(params))
+            return ERROR; 
+        if(!isThereComma(line, lInd))
+            return FALSE;
+        if(!(scaned = scanDataParams(line, lInd))) /* scanning data from the line */
+            error = TRUE;
+        if(error == TRUE)
+            continue;
+
+        j = 0;
+        while(scaned[j] != NULL){
+            if(DC == OS_MEM) /* pushing the data to the data image */ 
+                dataImage = calloc(1, sizeof(word));
+            else
+                dataImage = realloc(dataImage, (DC - OS_MEM) * sizeof(word));
+            if(!isAlloc(params))
+                return ERROR;
+            dataImage[DC - OS_MEM] = newData;
+            DC++;
+            j++;
+        }
     }
     return TRUE;
 }
 
-boolean addToSymTab(symbolTable *symTab, char *name, char *attrib, int *size){
-    if(size == 0)
-        symTab = calloc(1, sizeof(symbolTable));
-    else
-        symTab = realloc(symTab,(*size)++ * sizeof(symbolTable));
-    if(!isAlloc(symTab) || size-1 >= RAM_SIZE || isIlegalName(label, symTab, size))
+boolean pushExtern(char *line, int *lInd){
+    int temp, size = 1, curr;
+    char curr;
+    char **label = malloc(sizeof(*char));
+    if(!isAlloc(label))
+        return ERROR; 
+
+    while(isspace(line[*lInd]))
+        (*lInd)++;
+
+    *label = readLabel(line, lInd);
+    if(!isValidLabel(label))
         return FALSE;
-    (*size)++
-    symTab[*size-1].symbol = name;
-    symTab[*size-1].address = DC;
-    symTab[*size-1].attribute = attrib;
+    label[size-1] = '\0';
+    if(isIlegalName(*label))
+        return FALSE;
+    if(!addToSymTab(*label, 0, "external"))
+        return FALSE;
     return TRUE;
 }
 
-boolean wasDefined(symbolTable *symTab, char *sym, int size){
+/* label */
+boolean addToSymTab(char *name, int val, char *attrib){
+    static int size = 0;
+    if(size == 0)
+        symTab = malloc(sizeof(symbolTable));
+    else
+        symTab = realloc(symTab, (size++) * sizeof(symbolTable));
+    if(!isAlloc(*symTab) || isIlegalName(label, size))
+        return FALSE;
+    symTab[size].symbol = name;
+    symTab[size].address = val;
+    symTab[size].attribute = attrib;
+    size++;
+    return TRUE;
+}
+
+boolean wasDefined(char *sym){
     int i;
     for(i = 0; i < size; i++){
         if(strcmp(symTab[i].symbol, sym))
@@ -52,10 +107,14 @@ boolean wasDefined(symbolTable *symTab, char *sym, int size){
     return FALSE;
 }
 
-boolean isIlegalName(char *label, symbolTable* symTab, int size){
+boolean isIlegalName(char *label){
     int i;
     boolean error = FALSE;
-    char commands[COMMANDS] = {".data",".string",".extern",".entry"};
+    char directives[COMMANDS] = {".data",".string",".extern",".entry"};
+    char *instructions[INSTRUCTIONS] = {"mov", "cmp", "add", "sub", "lea",
+                                        "clr", "not", "inc", "dec", "jmp", 
+                                        "bne", "jsr", "red", "prn", "rts",
+                                        "stop"};
 
     for(i = 0; i < REGISTERS; i++){
         if(strcmp(REGISTER_NAME(i), label){
@@ -63,20 +122,44 @@ boolean isIlegalName(char *label, symbolTable* symTab, int size){
             return TRUE;
         }
         if(i <= COMMANDS){
-            if(strcmp(commands[i], label)){
+            if(strcmp(directives[i], label)){
                 printf("error: label should not be named as a directive\n");
                 return TRUE;
             }
         }
     }
-    if(wasDefined(symTab, label, size)){
+    for(i = 0; i < INSTRACTIONS; i++){
+        if(strcmp(instructions[i], label)){
+            printf("error: label should not be named as an instruction\n");
+            return TRUE;
+        } 
+    }
+    if(wasDefined(label)){
         printf("error: label has been already defined\n");
         return TRUE;
     }
     return FALSE;
 }
 
-void delTabAndCnts(symbolTable *symTab){
+/* memory allocation */
+boolean isAlloc(void *p){
+    if(!p){
+        printf("error : memory allocation failed, could not continue the compilation process\n");
+        return FALSE;
+    }
+    return TRUE;
+}
+
+boolean isOverFlow(void){
+    if(IC + DC > RAM_SIZE){
+        printf("error: memory over flow\n")
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/* conters and memory images */
+void delMem(){
     free(symTab);
     free(instImage);
     free(dataImage);
@@ -89,47 +172,16 @@ void resetCounters(){
     return;
 }
 
-void pushInstruction(word newInst){
-    if(IC == OS_MEM)
-        instImage = calloc(1, sizeof(word));
-    else
-        instImage = realloc(instImage, (IC-OS_MEM) * sizeof(word));
-    if(!isAlloc(instImage)){
-        printf("error: cannot push more words to memory, memory allocation failed\n");
-        return;
-    }
-    instImage[IC-OS_MEM] = newInst;
-    IC++;
-    return;
-}
-
-void pushData(word newData){
-    if(DC == OS_MEM)
-        dataImage = calloc(1, sizeof(word));
-    else
-        dataImage = realloc(dataImage, (DC-OS_MEM) * sizeof(word));
-    if(!isAlloc(dataImage)){
-        printf("error: cannot push more words to memory, memory allocation failed\n");
-        return;
-    }
-    
-    instImage[DC-OS_MEM] = dataInst;
-    DC++;
-    return;
-}
-
-void pushToRAM(){
-    RAM = calloc(IC+DC, sizeof(word));
-}
-
-void fileExternals(){}
-void fileEntrys(){}
-void fileObjext(){}
-
 word buildMainWord(int opcode, int funct, int source, int dest){
     word w;
-    word w.wrd = source + dest<<SOURCE_SIZE + funct<<(DEST_SIZE+SOURCE_SIZE) + opcode<<(FUNCT_SIZE+DEST_SIZE+SOURCE_SIZE);
+    word w.wrd = source + dest << SOURCE_SIZE + 
+                funct << (DEST_SIZE + SOURCE_SIZE) + 
+                opcode << (FUNCT_SIZE + DEST_SIZE + SOURCE_SIZE);
     return w;
 }
 
-word buildWord(){}
+word buildRegWord(char *reg){
+    word w;
+    word w.wrd = 1 << (atoi(reg[1]) - 1);
+    return w;
+}

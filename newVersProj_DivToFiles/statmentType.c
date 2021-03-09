@@ -3,6 +3,7 @@
 #include "statmentType.h"
 
 #define DIRECTIVE -1
+#define LINE 81
 
 static boolean isBlank(char *);
 static void delComments(char *);
@@ -68,4 +69,3 @@ static int jumpLabel(char *line, int i){
      }
      return 0;
 }
-

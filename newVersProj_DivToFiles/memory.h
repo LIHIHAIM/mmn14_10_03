@@ -4,17 +4,20 @@ typedef struct{
      char *symbol;
      int address;
      char *attribute;
-} symbolTable; 
+} symbolTable;
 
 typedef struct{
      int wrd:12; 
 } word;
 
+typedef struct{
+     enum dataType {intOrChar, reg, label};
+     enum dataType type;
+     word param;
+} paramType;
+
 boolean isAlloc(void *);
-boolean addToSymTab(symbolTable *, char *, int, char *, int);
-boolean wasDefined(symbolTable *, char *, int);
-boolean isIlegalName(char *, symbolTable*, int);
-void delTabAndCnts(symbolTable *);
-
-
-
+boolean addToSymTab(char *, int, char *);
+boolean wasDefined(char *);
+boolean isIlegalName(char *);
+void delMem();
